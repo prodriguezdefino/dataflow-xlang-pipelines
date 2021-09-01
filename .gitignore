@@ -129,5 +129,6 @@ dmypy.json
 .pyre/
 
 *_local.sh
-**target
+*target
 nb*.xml
+*.DS_STORE

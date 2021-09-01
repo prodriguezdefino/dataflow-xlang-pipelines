@@ -3,7 +3,7 @@ REGION=$2
 TEMP_BUCKET=$3
 SUBSCRIPTION=$4
 
-python3 pubsub-to-xlang.py \
+python3 pubsub_to_printer.py \
   --project=$PROJECT \
   --region=$REGION \
   --experiments=use_runner_v2 \
