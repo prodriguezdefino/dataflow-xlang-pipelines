@@ -3,15 +3,18 @@ REGION=$2
 TEMP_BUCKET=$3
 SUBSCRIPTION=$4
 
-python3 pubsub_to_printer.py \
+EXTERNAL_TRANSFORM_JAR="${PWD}/../java-pipelines/dataflow-xlang-transforms/target/xlang-ptransforms-bundled-0.0.1.jar"
+
+python3 pubsub_to_jvmprinter.py \
   --project=$PROJECT \
   --region=$REGION \
   --experiments=use_runner_v2 \
-  --job_name=pubsub-xlang \
+  --job_name=xlang-jvmprinter \
   --input_subscription=$SUBSCRIPTION \
   --setup_file=./setup.py \
   --runner=DataflowRunner \
   --temp_location=$TEMP_BUCKET/temp \
   --staging_location=$TEMP_BUCKET/staging \
-  --external_transforms_jar="/Users/pablor/projects/twitter/cdl/dataflow-xlang-pipelines/java-pipelines/dataflow-xlang-transforms/target/xlang-ptransforms-bundled-0.0.1.jar" $5
+  --no_use_public_ips \
+  --external_transforms_jar=$EXTERNAL_TRANSFORM_JAR $5
   

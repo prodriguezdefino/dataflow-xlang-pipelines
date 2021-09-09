@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC.
+# Copyright 2021 Google LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,29 +23,15 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from transforms.jvm_printer import JVMPrinter
 from transforms.group_messages import GroupMessagesByFixedWindows
 
+
+# This DoFn ensures that we are sending a String to the JVM PTransform, in some cases this is not necessary 
+# but there are cases where is necessary to control the type safeness of the data being exchanged between languages.
 class EnsureTypeSafety(DoFn):
-    def process(self, key_value, window=DoFn.WindowParam) -> typing.Iterable[str]:
+    def process(self, key_value) -> typing.Iterable[str]:
         shard, batch = key_value
 
         for message_body, publish_time in batch:
             yield f'got {str(shard)} with message received at : {publish_time}, payload: {message_body}'
-
-
-class PrintData(DoFn):
-    def process(self, key_value, window=DoFn.WindowParam):
-        """Write messages in a batch to Google Cloud Storage."""
-
-        ts_format = "%H:%M"
-        window_start = window.start.to_utc_datetime().strftime(ts_format)
-        window_end = window.end.to_utc_datetime().strftime(ts_format)
-        _, batch = key_value
-
-        for message_body, publish_time in batch:
-            logging.info('at : %s received message: %s, on window [%s - %s]', 
-                            publish_time, 
-                            message_body, 
-                            window_start, 
-                            window_end)
 
 
 def run(input_subscription, window_size=1.0, external_transforms_jar=None, pipeline_args=None):
@@ -61,10 +47,10 @@ def run(input_subscription, window_size=1.0, external_transforms_jar=None, pipel
             # binds the publish time returned by the Pub/Sub server for each message
             # to the element's timestamp parameter, accessible via `DoFn.TimestampParam`.
             # https://beam.apache.org/releases/pydoc/current/apache_beam.io.gcp.pubsub.html#apache_beam.io.gcp.pubsub.ReadFromPubSub
-            | "Read from Pub/Sub" >> io.ReadFromPubSub(subscription=input_subscription)
-            | "Window into" >> GroupMessagesByFixedWindows(window_size)
-            | "TypeSafeness" >> ParDo(EnsureTypeSafety())
-            | "PrintMessagesJVM" >> JVMPrinter('%s', external_transforms_jar)
+            | "ReadFromPubSub" >> io.ReadFromPubSub(subscription=input_subscription)
+            | "WindowInto" >> GroupMessagesByFixedWindows(window_size)
+            | "FormatData" >> ParDo(EnsureTypeSafety())
+            | "PrintMessagesOnJVM" >> JVMPrinter('%s', external_transforms_jar)
         )
 
 
