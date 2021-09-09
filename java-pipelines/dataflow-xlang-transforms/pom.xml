@@ -38,16 +38,14 @@
     <!-- bom versions -->
     <google-cloud-bom.version>0.157.0</google-cloud-bom.version>
     <!-- library versions -->
-    <beam.version>2.31.0</beam.version>
+    <beam.version>2.32.0</beam.version>
     <slf4j.version>1.7.30</slf4j.version>
     <autovalue.version>1.8.2</autovalue.version>
     <autoservice.version>1.0</autoservice.version>
   </properties>
     
   <dependencyManagement>
-    
     <dependencies>
-      
       <!-- https://mvnrepository.com/artifact/org.apache.beam/beam-sdks-java-bom -->
       <dependency>
         <groupId>org.apache.beam</groupId>
@@ -100,7 +98,6 @@
         <version>4.13</version>
         <scope>test</scope>
       </dependency>
-
     </dependencies>
   </dependencyManagement>
   
@@ -109,11 +106,22 @@
       <groupId>org.apache.beam</groupId>
       <artifactId>beam-sdks-java-core</artifactId>
     </dependency>
+    <!-- Needed to instantiate the expansion service -->
     <dependency>
       <groupId>org.apache.beam</groupId>
       <artifactId>beam-sdks-java-expansion-service</artifactId>
     </dependency>
-    
+    <!-- Since we are generating data from JVM using a pubsub topic we need this dependency. -->
+    <dependency>
+      <groupId>org.apache.beam</groupId>
+      <artifactId>beam-sdks-java-io-google-cloud-platform</artifactId>
+    </dependency>
+    <!-- Since we are using PubsubIO and that transform needs a runner class in the classpath -->
+    <dependency>
+      <groupId>org.apache.beam</groupId>
+      <artifactId>beam-runners-direct-java</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value-annotations</artifactId>
@@ -241,6 +249,8 @@
                 <transformers>
                   <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                   <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                    <!-- Needed because we are going to use a shaded jar to instantiate 
+                    the Expansion Service locally with all the needed dependencies -->
                     <mainClass>org.apache.beam.sdk.expansion.service.ExpansionService</mainClass>
                   </transformer>
                 </transformers>
